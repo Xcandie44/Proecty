@@ -7,6 +7,10 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 
@@ -27,28 +31,48 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-    class send extends AsyncTask<Void, Void, Void> {
+    class send extends AsyncTask<Object,Object,StringBuilder> implements com.example.user.project.send {
+        HttpURLConnection connection = null;
+        StringBuilder sb = new StringBuilder();
+        String query = "https://api.binance.com/api/v3/ticker/price";
+
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mInfoTextView.setText("Полез на крышу");
+            mInfoTextView.setText("Начало");
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
-            try {
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        protected StringBuilder doInBackground(Object... objects) {
+            try{
+                connection = (HttpURLConnection) new URL(query).openConnection();
+                connection.setRequestMethod("GET");
+                connection.setUseCaches(false);
+                connection.setConnectTimeout(250);
+                connection.setReadTimeout(250);
+                connection.connect();
+                if (HttpURLConnection.HTTP_OK == connection.getResponseCode()){
+                    BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String line;
+                    while((line = in.readLine())!=null);
+                    sb.append(line);
+                    sb.append("\n");
+                }
+            }catch (Throwable cause){
+                cause.printStackTrace();
+            }finally {
+                if(connection!=null){
+                    connection.disconnect();
+                }
             }
-            return null;
+            return sb;
         }
 
         @Override
-        protected void onPostExecute(Void result) {
+        protected void onPostExecute(StringBuilder result) {
             super.onPostExecute(result);
-            mInfoTextView.setText("Залез");
+            mInfoTextView.setText(sb.toString());
         }
     }
 }
