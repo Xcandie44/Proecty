@@ -13,6 +13,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.HttpsURLConnection;
+
 
 public class MainActivity extends AppCompatActivity{
     private TextView mInfoTextView;
@@ -25,53 +27,57 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void onClick(View view) {
-        send send = new send();
-        send.execute();
+        new send().execute();
     }
 
 
 
-    class send extends AsyncTask<Object,Object,StringBuilder> implements com.example.user.project.send {
-        HttpURLConnection connection = null;
+    class send extends AsyncTask<Object,Object,StringBuilder> {
+        HttpsURLConnection connection = null;
         StringBuilder sb = new StringBuilder();
-        String query = "https://api.binance.com/api/v3/ticker/price";
+        String query;
 
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            query="https://api.binance.com/api/v3/ticker/price";
             mInfoTextView.setText("Начало");
         }
 
         @Override
         protected StringBuilder doInBackground(Object... objects) {
             try{
-                connection = (HttpURLConnection) new URL(query).openConnection();
+                URL url = new URL(query);
+                connection = (HttpsURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
-                connection.setUseCaches(false);
-                connection.setConnectTimeout(250);
-                connection.setReadTimeout(250);
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
                 connection.connect();
-                if (HttpURLConnection.HTTP_OK == connection.getResponseCode()){
+                if (HttpsURLConnection.HTTP_OK == connection.getResponseCode()){
                     BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                     String line;
-                    while((line = in.readLine())!=null);
+                    while((line = in.readLine())!= null);
                     sb.append(line);
                     sb.append("\n");
                 }
             }catch (Throwable cause){
                 cause.printStackTrace();
-            }finally {
-                if(connection!=null){
+                mInfoTextView.setText("Ошибка");
+            }
+            finally {
+                if (connection != null) {
                     connection.disconnect();
                 }
             }
+
             return sb;
         }
 
         @Override
         protected void onPostExecute(StringBuilder result) {
             super.onPostExecute(result);
+            mInfoTextView.setText("Конец");
             mInfoTextView.setText(sb.toString());
         }
     }
